@@ -122,7 +122,17 @@ export async function uploadToR2(
     throw new Error('R2 存儲桶不可用');
   }
 
-  const blob = new Blob([data], { type: contentType || 'application/octet-stream' });
+  // Convert to Uint8Array for Blob compatibility
+  let uint8Array: Uint8Array;
+  if (data instanceof Buffer) {
+    uint8Array = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  } else if (data instanceof ArrayBuffer) {
+    uint8Array = new Uint8Array(data);
+  } else {
+    uint8Array = data;
+  }
+
+  const blob = new Blob([uint8Array as BlobPart], { type: contentType || 'application/octet-stream' });
 
   await bucket.put(objectKey, blob, {
     httpMetadata: {

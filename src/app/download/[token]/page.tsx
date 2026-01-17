@@ -55,7 +55,8 @@ export default function DownloadPage() {
   }, [token]);
 
   const handleDownload = async () => {
-    if (!session?.user?.id) {
+    const userId = (session?.user as { id?: string })?.id;
+    if (!userId) {
       setError('请先登录');
       return;
     }
@@ -70,7 +71,7 @@ export default function DownloadPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: session.user?.id,
+          userId: userId,
         }),
       });
 
