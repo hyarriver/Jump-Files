@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  downloads DownloadToken[]
+
+  @@map("users")
+}
+
+model File {
+  id           String   @id @default(cuid())
+  objectKey    String   @unique // 對象存儲路徑
+  size         Int      // 文件大小（字節）
+  adminToken   String   @unique // 管理token，用於查看下載審計
+  createdAt    DateTime @default(now())
+
+  // Relations
+  tokens DownloadToken[]
+
+  @@map("files")
+}
+
+model DownloadToken {
+  id     String   @id @default(cuid())
+  token  String   @unique // 一次性隨機字符串
+  status String   @default("unused") // "unused" | "used"
+
+  fileId String
+  file   File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  usedBy   String? // 下載用戶ID
+  usedAt   DateTime? // 下載時間
+
+  user     User?   @relation(fields: [usedBy], references: [id])
+  createdAt DateTime @default(now())
+
+  @@map("download_tokens")
+}

@@ -1,0 +1,35 @@
+# Cloudflare Pages 環境變數示例
+# 將此文件複製為 .dev.vars 並填入實際值
+# 注意：不要將 .dev.vars 提交到版本控制系統
+
+# 數據庫配置（如果使用 Cloudflare D1）
+# DATABASE_URL="file:./dev.db"  # 本地開發使用 SQLite
+# DATABASE_URL="your-d1-database-url"  # 生產環境使用 D1
+
+# NextAuth.js 配置
+NEXTAUTH_URL="http://localhost:8788"
+NEXTAUTH_SECRET="your-secret-key-here-change-in-production"
+
+# 存儲類型配置："r2" | "minio" | "local"
+# 在 Cloudflare Pages 中設置為 "r2"
+# 本地開發可以使用 "local" 或 "minio"
+STORAGE_TYPE="local"
+
+# MinIO/對象存儲配置（本地開發或非 Cloudflare 環境使用）
+MINIO_ENDPOINT="localhost:9000"
+MINIO_ACCESS_KEY="minioadmin"
+MINIO_SECRET_KEY="minioadmin"
+MINIO_BUCKET_NAME="jump-files"
+
+# Cloudflare R2 配置（在 Cloudflare Pages 中通過綁定配置，無需環境變數）
+# R2 綁定在 wrangler.toml 或 Cloudflare Pages 設置中配置
+R2_BUCKET_NAME="jump-files"
+
+# 應用配置
+MAX_FILE_SIZE_MB=100
+
+# Cloudflare R2 配置（如果使用 R2，取消註釋並配置）
+# R2_ACCOUNT_ID="your-account-id"
+# R2_ACCESS_KEY_ID="your-access-key-id"
+# R2_SECRET_ACCESS_KEY="your-secret-access-key"
+# R2_BUCKET_NAME="jump-files"
