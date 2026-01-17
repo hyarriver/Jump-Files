@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage-unified';
 import { isValidTokenFormat } from '@/lib/token';
+import { env } from '@/config/env';
 
 export async function POST(
   request: NextRequest,
@@ -61,10 +62,15 @@ export async function POST(
     // 使用統一的存儲接口生成文件下載URL
     const downloadUrl = storage.getUrl(result.objectKey);
     
-    // 如果 URL 是相對路徑，轉換為絕對路徑
-    const fullUrl = downloadUrl.startsWith('http') 
-      ? downloadUrl 
-      : `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${downloadUrl}`;
+    // 如果 URL 是相對路徑，轉換為絕對路徑 - 從請求頭動態獲取域名
+    let fullUrl = downloadUrl;
+    if (!downloadUrl.startsWith('http')) {
+      const host = request.headers.get('host') || '';
+      const protocol = request.headers.get('x-forwarded-proto') || 
+                       (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
+      const baseUrl = env.NEXTAUTH_URL || `${protocol}://${host}`;
+      fullUrl = `${baseUrl}${downloadUrl}`;
+    }
 
     // 返回下載URL（前端將使用此URL觸發下載）
     return new Response(fullUrl, {

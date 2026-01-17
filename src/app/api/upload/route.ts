@@ -117,9 +117,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 生成分享鏈接
-    const shareUrl = `${env.NEXTAUTH_URL}/download/${downloadToken}`;
-    const adminUrl = `${env.NEXTAUTH_URL}/audit/${adminToken}`;
+    // 生成分享鏈接 - 從請求頭動態獲取域名，適應不同環境
+    const host = request.headers.get('host') || '';
+    const protocol = request.headers.get('x-forwarded-proto') || 
+                     (host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https');
+    const baseUrl = env.NEXTAUTH_URL || `${protocol}://${host}`;
+    
+    const shareUrl = `${baseUrl}/download/${downloadToken}`;
+    const adminUrl = `${baseUrl}/audit/${adminToken}`;
 
     return NextResponse.json({
       shareUrl,
