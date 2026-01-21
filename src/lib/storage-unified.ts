@@ -5,6 +5,8 @@ import { env } from '@/config/env';
 import * as R2Storage from './storage-r2';
 import { minioClient, ensureBucketExists, generateObjectKey as minioGenerateKey } from './storage';
 import { saveFileToLocal, readFileFromLocal, fileExistsLocal } from './storage-dev';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 export interface StorageAdapter {
   upload(objectKey: string, buffer: Buffer, contentType: string, originalFileName: string): Promise<void>;
@@ -102,6 +104,8 @@ function parseMinIOEndpoint(endpoint: string): { host: string; port: number } {
 }
 
 class LocalStorageAdapter implements StorageAdapter {
+  private readonly UPLOAD_DIR = path.join(process.cwd(), 'uploads');
+
   async upload(objectKey: string, buffer: Buffer, contentType: string, originalFileName: string): Promise<void> {
     await saveFileToLocal(buffer, objectKey);
   }
@@ -119,8 +123,17 @@ class LocalStorageAdapter implements StorageAdapter {
   }
 
   async delete(objectKey: string): Promise<void> {
-    // 本地存儲刪除實現（可選）
-    throw new Error('本地存儲不支持刪除操作');
+    // 本地存儲刪除實現
+    try {
+      const filePath = path.join(this.UPLOAD_DIR, objectKey);
+      await fs.unlink(filePath);
+    } catch (error) {
+      // 如果文件不存在，忽略错误
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        console.error('删除本地文件失败:', error);
+        throw error;
+      }
+    }
   }
 
   getUrl(objectKey: string): string {

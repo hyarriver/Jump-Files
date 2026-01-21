@@ -9,7 +9,8 @@ export async function GET(
     const { objectKey } = await params;
     
     // 安全检查：防止路径遍历攻击
-    if (objectKey.includes('..') || objectKey.includes('/') || objectKey.includes('\\')) {
+    // 只检查路径遍历攻击，允许正常的文件名（objectKey 格式为 timestamp-random.extension）
+    if (objectKey.includes('..') || objectKey.startsWith('/') || objectKey.startsWith('\\')) {
       return NextResponse.json(
         { error: '无效的文件路径' },
         { status: 400 }

@@ -20,6 +20,7 @@ model User {
 
   // Relations
   downloads DownloadToken[]
+  uploadedFiles File[]
 
   @@map("users")
 }
@@ -29,11 +30,18 @@ model File {
   objectKey    String   @unique // 對象存儲路徑
   size         Int      // 文件大小（字節）
   adminToken   String   @unique // 管理token，用於查看下載審計
+  uploadedBy   String? // 上傳用戶ID（可選，支持匿名上傳）
+  originalName String? // 原始文件名
+  expiresAt    DateTime? // 文件過期時間（可選）
   createdAt    DateTime @default(now())
 
   // Relations
   tokens DownloadToken[]
+  uploader User? @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
 
+  @@index([createdAt])
+  @@index([uploadedBy])
+  @@index([expiresAt])
   @@map("files")
 }
 
@@ -41,6 +49,9 @@ model DownloadToken {
   id     String   @id @default(cuid())
   token  String   @unique // 一次性隨機字符串
   status String   @default("unused") // "unused" | "used"
+  password String? // 訪問密碼（可選）
+  maxDownloads Int? // 最大下載次數（可選）
+  downloadCount Int @default(0) // 當前下載次數
 
   fileId String
   file   File     @relation(fields: [fileId], references: [id], onDelete: Cascade)
@@ -51,5 +62,8 @@ model DownloadToken {
   user     User?   @relation(fields: [usedBy], references: [id])
   createdAt DateTime @default(now())
 
+  @@index([fileId])
+  @@index([status, createdAt])
+  @@index([usedBy, usedAt])
   @@map("download_tokens")
 }

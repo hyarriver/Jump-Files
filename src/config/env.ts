@@ -20,4 +20,8 @@ export const env = {
 
   // App Config
   MAX_FILE_SIZE_MB: parseInt(process.env.MAX_FILE_SIZE_MB || "100"),
+  
+  // Rate Limiting (Upstash Redis - optional)
+  UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+  UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
 } as const;

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isValidTokenFormat } from '@/lib/token';
+import { rateLimitMiddleware } from '@/lib/middleware/rate-limit-middleware';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ): Promise<NextResponse> {
+  // 速率限制检查
+  const rateLimitResponse = await rateLimitMiddleware(request, { strategy: 'audit' });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const { token } = await params;
 
