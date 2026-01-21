@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, Shield, FileCheck, Users, Zap, Lock, CheckCircle2 } from 'lucide-react';
+import { Upload, Shield, FileCheck, Users, Zap, Lock, CheckCircle2, FileText } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -40,6 +40,13 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               {session ? (
                 <div className="flex items-center gap-4">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/my-files">
+                      <FileText className="mr-2 h-4 w-4" />
+                      我的文件
+                    </Link>
+                  </Button>
+                  <Separator orientation="vertical" className="h-6" />
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">欢迎, {session.user?.name || session.user?.email}</span>

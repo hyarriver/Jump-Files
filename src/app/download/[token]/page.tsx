@@ -7,12 +7,17 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Download, FileText, AlertTriangle, Shield, LogIn, UserPlus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, Download, FileText, AlertTriangle, Shield, LogIn, UserPlus, Eye } from 'lucide-react';
 
 interface DownloadToken {
   id: string;
   token: string;
   status: string;
+  requiresPassword?: boolean;
+  maxDownloads?: number | null;
+  downloadCount?: number;
   file: {
     id: string;
     objectKey: string;
@@ -30,6 +35,9 @@ export default function DownloadPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState('');
+  const [canPreview, setCanPreview] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
 
   // 驗證token
   useEffect(() => {
@@ -42,6 +50,17 @@ export default function DownloadPage() {
       }
       const data = await response.json();
       setTokenData(data.token);
+      
+      // 检查是否需要密码
+      if (data.token.requiresPassword) {
+        setShowPasswordInput(true);
+      }
+      
+      // 检查是否可以预览
+      const objectKey = data.token.file.objectKey;
+      const extension = objectKey.split('.').pop()?.toLowerCase() || '';
+      const { isPreviewable: checkPreviewable } = await import('@/lib/file-validation');
+      setCanPreview(checkPreviewable(`.${extension}`));
     } catch (error) {
       setError(error instanceof Error ? error.message : '验证链接失败');
     } finally {
@@ -72,6 +91,7 @@ export default function DownloadPage() {
         },
         body: JSON.stringify({
           userId: userId,
+          password: password || undefined,
         }),
       });
 
@@ -221,14 +241,29 @@ export default function DownloadPage() {
             </Alert>
           )}
 
-          <Button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className="w-full"
-          >
-            {isDownloading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isDownloading ? '下载中...' : '下载文件'}
-          </Button>
+          <div className="flex gap-2">
+            {canPreview && tokenData && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const previewUrl = `/preview/${encodeURIComponent(tokenData.file.objectKey)}?token=${token}`;
+                  window.open(previewUrl, '_blank');
+                }}
+                className="flex-1"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                预览
+              </Button>
+            )}
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading || (showPasswordInput && !password)}
+              className={canPreview ? "flex-1" : "w-full"}
+            >
+              {isDownloading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDownloading ? '下载中...' : '下载文件'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

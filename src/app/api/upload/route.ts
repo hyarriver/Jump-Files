@@ -3,8 +3,17 @@ import { prisma } from '@/lib/prisma';
 import { storage, generateObjectKey } from '@/lib/storage-unified';
 import { generateDownloadToken } from '@/lib/token';
 import { env } from '@/config/env';
+import { rateLimitMiddleware } from '@/lib/middleware/rate-limit-middleware';
+import { validateFileType } from '@/lib/file-validation';
+import { getCurrentUser } from '@/lib/get-session';
 
 export async function POST(request: NextRequest) {
+  // 速率限制检查
+  const rateLimitResponse = await rateLimitMiddleware(request, { strategy: 'upload' });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     // 检查请求体大小
     const contentLength = request.headers.get('content-length');
@@ -31,6 +40,9 @@ export async function POST(request: NextRequest) {
     }
     
     const file = formData.get('file') as File;
+    const expiresInDays = formData.get('expiresInDays'); // 过期天数（可选）
+    const password = formData.get('password') as string | null; // 访问密码（可选）
+    const maxDownloads = formData.get('maxDownloads'); // 最大下载次数（可选）
 
     if (!file) {
       return NextResponse.json(
@@ -44,6 +56,15 @@ export async function POST(request: NextRequest) {
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: `文件大小不能超过 ${env.MAX_FILE_SIZE_MB}MB` },
+        { status: 400 }
+      );
+    }
+
+    // 验证文件类型
+    const fileValidation = await validateFileType(file);
+    if (!fileValidation.valid) {
+      return NextResponse.json(
+        { error: fileValidation.error || '不支持的文件类型' },
         { status: 400 }
       );
     }
@@ -71,8 +92,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // 获取当前用户（如果已登录）
+    const user = await getCurrentUser();
+
     // 生成管理token（用於查看下載審計）
     const adminToken = generateDownloadToken();
+
+    // 计算过期时间（如果指定了过期天数）
+    let expiresAt: Date | null = null;
+    if (expiresInDays) {
+      const days = parseInt(expiresInDays.toString(), 10);
+      if (!isNaN(days) && days > 0) {
+        expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + days);
+      }
+    }
 
     // 在數據庫中創建文件記錄
     let dbFile;
@@ -82,6 +116,9 @@ export async function POST(request: NextRequest) {
           objectKey,
           size: file.size,
           adminToken,
+          uploadedBy: user?.id || null,
+          originalName: file.name,
+          expiresAt,
         },
       });
     } catch (dbError) {
@@ -107,6 +144,9 @@ export async function POST(request: NextRequest) {
         data: {
           token: downloadToken,
           fileId: dbFile.id,
+          password: password || null,
+          maxDownloads: maxDownloads ? parseInt(maxDownloads.toString(), 10) : null,
+          downloadCount: 0,
         },
       });
     } catch (tokenError) {

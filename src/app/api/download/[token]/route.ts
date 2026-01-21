@@ -3,14 +3,21 @@ import { prisma } from '@/lib/prisma';
 import { storage } from '@/lib/storage-unified';
 import { isValidTokenFormat } from '@/lib/token';
 import { env } from '@/config/env';
+import { rateLimitMiddleware } from '@/lib/middleware/rate-limit-middleware';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  // 速率限制检查
+  const rateLimitResponse = await rateLimitMiddleware(request, { strategy: 'download' });
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const { token } = await params;
-    const { userId } = await request.json();
+    const { userId, password } = await request.json();
 
     // 驗證輸入
     if (!userId) {
@@ -42,15 +49,34 @@ export async function POST(
         throw new Error('鏈接不存在或已失效');
       }
 
-      if (tokenRecord.status === 'used') {
+      // 驗證密碼（如果設置了密碼）
+      if (tokenRecord.password) {
+        if (!password || tokenRecord.password !== password) {
+          throw new Error('密碼錯誤');
+        }
+      }
+
+      // 檢查訪問次數限制
+      if (tokenRecord.maxDownloads !== null) {
+        if (tokenRecord.downloadCount >= tokenRecord.maxDownloads) {
+          throw new Error('已達到最大下載次數限制');
+        }
+      }
+
+      // 檢查是否已使用（一次性鏈接）
+      if (tokenRecord.status === 'used' && tokenRecord.maxDownloads === null) {
         throw new Error('此鏈接已被使用，無法再次下載');
       }
 
-      // 記錄下載行為並將token標記為已使用
+      // 更新下載計數和狀態
+      const newDownloadCount = (tokenRecord.downloadCount || 0) + 1;
+      const shouldMarkAsUsed = tokenRecord.maxDownloads === null || newDownloadCount >= (tokenRecord.maxDownloads || 0);
+
       await tx.downloadToken.update({
         where: { token },
         data: {
-          status: 'used',
+          status: shouldMarkAsUsed ? 'used' : tokenRecord.status,
+          downloadCount: newDownloadCount,
           usedBy: userId,
           usedAt: new Date(),
         },

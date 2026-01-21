@@ -32,9 +32,18 @@ export async function GET(
       );
     }
 
-    if (tokenRecord.status === 'used') {
+    // 檢查是否已使用（一次性鏈接）
+    if (tokenRecord.status === 'used' && tokenRecord.maxDownloads === null) {
       return NextResponse.json(
         { error: '此鏈接已被使用，無法再次下載' },
+        { status: 410 } // Gone
+      );
+    }
+
+    // 檢查訪問次數限制
+    if (tokenRecord.maxDownloads !== null && tokenRecord.downloadCount >= tokenRecord.maxDownloads) {
+      return NextResponse.json(
+        { error: '已達到最大下載次數限制' },
         { status: 410 } // Gone
       );
     }
@@ -44,6 +53,9 @@ export async function GET(
         id: tokenRecord.id,
         token: tokenRecord.token,
         status: tokenRecord.status,
+        requiresPassword: !!tokenRecord.password,
+        maxDownloads: tokenRecord.maxDownloads,
+        downloadCount: tokenRecord.downloadCount,
         file: {
           id: tokenRecord.file.id,
           objectKey: tokenRecord.file.objectKey,
