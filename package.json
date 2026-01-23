@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:ws": "tsx scripts/start-websocket.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -22,6 +23,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/multer": "^2.0.0",
+    "@types/streamsaver": "^2.0.5",
     "@types/uuid": "^10.0.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.1",
@@ -40,8 +42,10 @@
     "react-hook-form": "^7.71.1",
     "react-pdf": "^10.3.0",
     "sonner": "^2.0.7",
+    "streamsaver": "^2.0.6",
     "tailwind-merge": "^3.4.0",
     "uuid": "^13.0.0",
+    "ws": "^8.18.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {
@@ -50,6 +54,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ws": "^8.5.13",
     "eslint": "^9",
     "eslint-config-next": "16.1.2",
     "tailwindcss": "^4",

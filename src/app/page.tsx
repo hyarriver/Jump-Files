@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Upload, Shield, FileCheck, Users, Zap, Lock, CheckCircle2, FileText } from 'lucide-react';
+import { Upload, Shield, FileCheck, Users, Zap, Lock, CheckCircle2, FileText, Wifi } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -40,6 +40,12 @@ export default function Home() {
             <div className="flex items-center space-x-4">
               {session ? (
                 <div className="flex items-center gap-4">
+                  <Button variant="ghost" size="sm" asChild>
+                    <Link href="/lan-transfer">
+                      <Wifi className="mr-2 h-4 w-4" />
+                      局域网传输
+                    </Link>
+                  </Button>
                   <Button variant="ghost" size="sm" asChild>
                     <Link href="/my-files">
                       <FileText className="mr-2 h-4 w-4" />
@@ -114,6 +120,24 @@ export default function Home() {
               </CardDescription>
             </div>
             <FileUpload />
+          </Card>
+
+          {/* 局域网传输入口 */}
+          <Card className="mt-12 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold mb-2">局域网文件传输</h3>
+                <p className="text-muted-foreground">
+                  在同一局域网内的设备之间直接传输文件，无需上传到服务器，快速且私密。
+                </p>
+              </div>
+              <Button asChild size="lg">
+                <Link href="/lan-transfer">
+                  <Wifi className="mr-2 h-5 w-5" />
+                  开始传输
+                </Link>
+              </Button>
+            </div>
           </Card>
 
           {/* 功能说明 */}

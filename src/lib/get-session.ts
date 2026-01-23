@@ -2,7 +2,7 @@
  * 获取当前用户Session的工具函数
  * 用于API路由中获取用户信息
  */
-import { getServerSession } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
 import { authOptions } from './auth';
 
 export async function getCurrentUser() {
