@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SessionProvider from "@/components/SessionProvider";
 import EnvChecker from "@/components/EnvChecker";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
         <SessionProvider>
           {children}
           <EnvChecker />
+          <Toaster />
         </SessionProvider>
       </body>
     </html>

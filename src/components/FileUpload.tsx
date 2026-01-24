@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import {
   Upload,
   FileText,
@@ -50,6 +51,7 @@ export default function FileUpload() {
   const [expiresInDays, setExpiresInDays] = useState<string>(''); // 过期天数
   const [sharePassword, setSharePassword] = useState(''); // 分享密码
   const [maxDownloads, setMaxDownloads] = useState<string>(''); // 最大下载次数
+  const [copiedFileId, setCopiedFileId] = useState<string | null>(null); // 已复制的文件ID
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
@@ -229,11 +231,42 @@ export default function FileUpload() {
     }
   };
 
-  const handleCopyLink = async (text: string) => {
+  const handleCopyLink = async (text: string, fileId: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      // 使用 Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // 降级方案：使用传统方法
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } catch (err) {
+          console.error('复制失败:', err);
+          toast.error('复制失败，请手动复制链接');
+          return;
+        }
+        document.body.removeChild(textArea);
+      }
+      
+      // 显示成功提示
+      toast.success('链接已复制到剪贴板');
+      
+      // 设置视觉反馈
+      setCopiedFileId(fileId);
+      setTimeout(() => {
+        setCopiedFileId(null);
+      }, 2000);
     } catch (error) {
       console.error('复制失败:', error);
+      toast.error('复制失败，请手动复制链接');
     }
   };
 
@@ -478,10 +511,14 @@ export default function FileUpload() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
-                          onClick={() => handleCopyLink(item.result!.shareUrl)}
+                          onClick={() => handleCopyLink(item.result!.shareUrl, item.id)}
                           title="复制分享链接"
                         >
-                          <Copy className="h-4 w-4" />
+                          {copiedFileId === item.id ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button
                           variant="ghost"
